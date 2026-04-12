@@ -1,9 +1,11 @@
 import re
+import os
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.llms import HuggingFaceHub
+
 
 
 def extract_section_clause(text):
@@ -83,10 +85,13 @@ def ask_question(db, query, chat_history):
 
     context = "\n\n".join([doc.page_content for doc in docs])
 
-  
     llm = HuggingFaceHub(
-        repo_id="google/flan-t5-large",
-        model_kwargs={"temperature": 0.3, "max_length": 512}
+        repo_id="google/flan-t5-base",   
+        huggingfacehub_api_token=os.getenv("HUGGINGFACEHUB_API_TOKEN"),
+        model_kwargs={
+            "temperature": 0.3,
+            "max_new_tokens": 512
+        }
     )
 
     history_text = "\n".join(
