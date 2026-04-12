@@ -2,8 +2,8 @@ import re
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import OllamaEmbeddings
-from langchain_community.llms import Ollama
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.llms import HuggingFaceHub
 
 
 def extract_section_clause(text):
@@ -59,7 +59,6 @@ def process_pdf(pdf_path):
 
         section, clause = extract_section_clause(text)
 
-    
         if section != "Unknown":
             current_section = section
         else:
@@ -68,7 +67,10 @@ def process_pdf(pdf_path):
         chunk.metadata["section"] = section
         chunk.metadata["clause"] = clause
 
-    embeddings = OllamaEmbeddings(model="llama3")
+    embeddings = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2"
+    )
+
     db = FAISS.from_documents(chunks, embeddings)
 
     return db
@@ -77,12 +79,15 @@ def process_pdf(pdf_path):
 def ask_question(db, query, chat_history):
     retriever = db.as_retriever(search_kwargs={"k": 4})
 
-    
     docs = retriever.invoke(query)
 
     context = "\n\n".join([doc.page_content for doc in docs])
 
-    llm = Ollama(model="llama3")
+  
+    llm = HuggingFaceHub(
+        repo_id="google/flan-t5-large",
+        model_kwargs={"temperature": 0.3, "max_length": 512}
+    )
 
     history_text = "\n".join(
         [f"User: {h['q']}\nAssistant: {h['a']}" for h in chat_history[-3:]]
@@ -94,8 +99,8 @@ You are an intelligent assistant.
 RULES:
 - Answer ONLY using the context
 - Be clear and concise
-- ALWAYS include Section and Clause in answer
-- Format like: Answer (Section X, Clause Y)
+- ALWAYS include Section and Clause
+- Format: Answer (Section X, Clause Y)
 - If not found, say: Not mentioned in document
 
 Chat History:
