@@ -6,7 +6,7 @@ st.set_page_config(page_title="Fine Print Decoder", layout="wide")
 st.title("📄 Fine Print Decoder (AI)")
 st.caption("Ask questions from your PDF with source attribution")
 
-# ✅ Session state
+
 if "db" not in st.session_state:
     st.session_state.db = None
 if "chat" not in st.session_state:
